@@ -30,7 +30,7 @@ Não é necessário instalar o Maven: o projeto inclui o Maven Wrapper.
 1. Entre na pasta do backend:
 
    ```bash
-   cd backend
+   cd voluntplus
    ```
 
 2. Crie o arquivo local de variáveis de ambiente a partir do exemplo:
@@ -49,14 +49,6 @@ Não é necessário instalar o Maven: o projeto inclui o Maven Wrapper.
 
 3. Preencha o `.env`, principalmente `CLERK_ISSUER_URI`, com a URL do emissor JWT da instância do Clerk usada pelo frontend.
 
-   No painel do Clerk, configure também a custom session claim abaixo. O backend usa esses dados autenticados e não aceita o e-mail informado livremente pelo cliente:
-
-   ```json
-   {
-     "primaryEmail": "{{user.primary_email_address}}"
-   }
-   ```
-
    ```dotenv
    POSTGRES_DB=voluntplus
    POSTGRES_USER=voluntplus
@@ -69,7 +61,6 @@ Não é necessário instalar o Maven: o projeto inclui o Maven Wrapper.
 
    FRONTEND_URL=http://localhost:3000
    CLERK_ISSUER_URI=https://seu-dominio.clerk.accounts.dev
-   APP_BUSINESS_ZONE=America/Sao_Paulo
    ```
 
    | Variável | Finalidade |
@@ -81,9 +72,12 @@ Não é necessário instalar o Maven: o projeto inclui o Maven Wrapper.
    | `DB_URL` | URL JDBC utilizada pela aplicação. |
    | `DB_USERNAME` | Usuário utilizado pela aplicação. |
    | `DB_PASSWORD` | Senha utilizada pela aplicação. |
-| `FRONTEND_URL` | Origem autorizada pelo CORS e usada na validação do claim `azp`. |
-| `CLERK_ISSUER_URI` | URL do emissor dos tokens JWT fornecida pelo Clerk. |
-| `APP_BUSINESS_ZONE` | Fuso usado nas regras de negócio dependentes da data, com padrão `America/Sao_Paulo`. |
+   | `FRONTEND_URL` | Origem autorizada pelo CORS e usada na validação do claim `azp`. |
+   | `CLERK_ISSUER_URI` | URL do emissor dos tokens JWT fornecida pelo Clerk. |
+   | `APP_IMAGE_DIR` | Pasta persistente das imagens dos serviços (padrão `./data/images`). |
+   | `APP_PUBLIC_BASE_URL` | Endereço público da API para as URLs das imagens (padrão `http://localhost:8080`). |
+
+A organização dos módulos, portas e adaptadores está em [docs/architecture.md](docs/architecture.md). Faça backup da pasta de imagens junto do banco.
 
 > O arquivo `.env` contém credenciais locais e não deve ser versionado. Ele já está incluído no `.gitignore`.
 
@@ -93,9 +87,11 @@ Não é necessário instalar o Maven: o projeto inclui o Maven Wrapper.
 
 Na pasta `backend`, execute:
 
-```bash
-docker compose up -d postgres
-```
+   ```bash
+   docker compose up -d postgres
+   ```
+
+   O exemplo usa a porta `5433` para coexistir com outro PostgreSQL local. O Compose usa um nome de contêiner próprio deste projeto.
 
 Confira se o contêiner ficou saudável:
 
@@ -195,7 +191,10 @@ src/
 
 ## Observações importantes
 
-- O Hibernate está configurado com `ddl-auto=none`: a aplicação não cria nem altera automaticamente o esquema do banco.
+- Fora do perfil `local`, o Hibernate está configurado com `ddl-auto=none` e não altera o esquema do banco.
+- No perfil `local`, o Hibernate usa `ddl-auto=update` para criar as tabelas durante o desenvolvimento. Em outros ambientes, aplique `db/001_user_accounts.sql` e `db/002_services_reviews.sql` no PostgreSQL antes de iniciar a API.
+- Os endpoints de perfil são `POST /api/v1/users/individuals`, `POST /api/v1/users/organizations`, `GET/PATCH /api/v1/users/me` e `PATCH /api/v1/users/me/role`. A identidade vem exclusivamente do `sub` do JWT do Clerk. O cadastro devolve `409` se a identidade já tiver perfil e a consulta devolve `404` se faltar o perfil.
+- O catálogo usa `GET /api/services` e `GET /api/services/{id}` (públicos). `POST/PATCH/DELETE /api/services` exigem um ofertante autenticado, e alterações verificam a propriedade do serviço. `GET /api/services/{id}/reviews` é público; `POST` exige beneficiário.
 - O backend não mantém sessão no servidor; a autenticação é stateless e baseada em JWT.
 - O Swagger fica desabilitado por padrão e é habilitado somente pelo perfil `local`.
 - Se a porta `5432` estiver ocupada, altere `POSTGRES_PORT` e atualize a porta correspondente em `DB_URL`.
@@ -220,3 +219,18 @@ Confirme se:
 ### Erro de CORS
 
 Defina `FRONTEND_URL` com a origem completa do frontend, incluindo protocolo e porta, sem caminhos adicionais. Exemplo: `http://localhost:3000`.
+
+## Atualização de catálogo e perfis
+
+A listagem pública retorna apenas serviços ATIVO. `/api/services/mine` preserva todos os serviços do ofertante.
+As respostas dos serviços incluem um resumo público do ofertante (nome, tipo de pessoa, gênero e idade); não incluem identidade Clerk, contato privado ou data de nascimento.
+As avaliações retornam `nomeAutor`, resolvido pelo módulo de usuários sem tornar o perfil do beneficiário público.
+`tipoLocalizacao` pertence ao serviço: 1 Casa, 2 Instituição, 5 Local Público, 6 Outro.
+Dias e turnos recebidos como arrays são gravados separadamente por vírgulas; o frontend também lê registros antigos com colchetes.
+Perfil de organização usa apenas nome da organização e CNPJ; dados legados de logo, descrição e contato não são editáveis.
+
+Para atualizar localmente, copie seu `.env` existente para a nova pasta, mantendo porta, credenciais e issuer.
+Não recrie nem apague o volume do PostgreSQL. O perfil `local` atualiza a tabela com `tipo_localizacao`.
+Se executar o Compose da nova pasta, use o mesmo projeto Docker da instalação anterior para reutilizar o volume.
+
+Em ambientes com `ddl-auto=none`, aplique `db/003_service_location_type.sql` antes de iniciar. No perfil local a coluna é criada automaticamente.

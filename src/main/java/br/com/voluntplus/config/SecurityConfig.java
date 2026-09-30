@@ -10,7 +10,11 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtValidators;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -35,6 +39,11 @@ public class SecurityConfig {
 				.logout(AbstractHttpConfigurer::disable)
 				.authorizeHttpRequests(authorize -> authorize
 						.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/services/mine").authenticated()
+						.requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated()
+						.requestMatchers(HttpMethod.GET, "/api/v1/users/*").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/service-images/*").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/services", "/api/services/*", "/api/services/*/reviews").permitAll()
 						.requestMatchers(
 								"/v3/api-docs",
 								"/v3/api-docs/**",
@@ -81,5 +90,16 @@ public class SecurityConfig {
 			);
 			return OAuth2TokenValidatorResult.failure(error);
 		};
+	}
+
+	@Bean
+	public JwtDecoder jwtDecoder(
+			@Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}") String issuer,
+			OAuth2TokenValidator<Jwt> clerkAuthorizedPartyValidator
+	) {
+		NimbusJwtDecoder decoder = NimbusJwtDecoder.withIssuerLocation(issuer).build();
+		decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
+				JwtValidators.createDefaultWithIssuer(issuer), clerkAuthorizedPartyValidator));
+		return decoder;
 	}
 }
