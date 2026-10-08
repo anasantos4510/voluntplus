@@ -12,7 +12,7 @@ Backend da plataforma VoluntPlus, desenvolvido com Spring Boot para oferecer os 
 - PostgreSQL 17
 - Clerk para autenticação JWT
 - OpenAPI/Swagger UI
-- Maven Wrapper
+- Maven
 - Docker Compose
 
 ## Pré-requisitos
@@ -20,18 +20,31 @@ Backend da plataforma VoluntPlus, desenvolvido com Spring Boot para oferecer os 
 Antes de iniciar, instale:
 
 - JDK 21 ou superior;
+- Maven 3.9 ou superior;
 - Docker Desktop, com o Docker Compose habilitado;
 - Git.
 
-Não é necessário instalar o Maven: o projeto inclui o Maven Wrapper.
+Confirme que as ferramentas estão disponíveis antes de continuar:
+
+```bash
+java -version
+mvn -version
+docker --version
+docker compose version
+```
+
+O Docker Desktop deve estar aberto e com o mecanismo de contêineres em execução.
 
 ## Configuração do ambiente
 
-1. Entre na pasta do backend:
+1. Clone o repositório e entre na pasta criada:
 
    ```bash
-   cd backend
+   git clone https://github.com/anasantos4510/voluntplus.git
+   cd voluntplus
    ```
+
+   Se o repositório já estiver baixado ou tiver sido clonado com outro nome, entre na pasta que contém o `pom.xml` e o `docker-compose.yml`.
 
 2. Crie o arquivo local de variáveis de ambiente a partir do exemplo:
 
@@ -81,9 +94,9 @@ Não é necessário instalar o Maven: o projeto inclui o Maven Wrapper.
    | `DB_URL` | URL JDBC utilizada pela aplicação. |
    | `DB_USERNAME` | Usuário utilizado pela aplicação. |
    | `DB_PASSWORD` | Senha utilizada pela aplicação. |
-| `FRONTEND_URL` | Origem autorizada pelo CORS e usada na validação do claim `azp`. |
-| `CLERK_ISSUER_URI` | URL do emissor dos tokens JWT fornecida pelo Clerk. |
-| `APP_BUSINESS_ZONE` | Fuso usado nas regras de negócio dependentes da data, com padrão `America/Sao_Paulo`. |
+   | `FRONTEND_URL` | Origem autorizada pelo CORS e usada na validação do claim `azp`. |
+   | `CLERK_ISSUER_URI` | URL do emissor dos tokens JWT fornecida pelo Clerk. |
+   | `APP_BUSINESS_ZONE` | Fuso usado nas regras de negócio dependentes da data, com padrão `America/Sao_Paulo`. |
 
 > O arquivo `.env` contém credenciais locais e não deve ser versionado. Ele já está incluído no `.gitignore`.
 
@@ -91,10 +104,10 @@ Não é necessário instalar o Maven: o projeto inclui o Maven Wrapper.
 
 ### 1. Inicie o PostgreSQL
 
-Na pasta `backend`, execute:
+Na pasta que contém o `docker-compose.yml`, execute:
 
 ```bash
-docker compose up -d postgres
+docker compose up -d --wait postgres
 ```
 
 Confira se o contêiner ficou saudável:
@@ -105,17 +118,13 @@ docker compose ps
 
 ### 2. Inicie a aplicação com o perfil local
 
-No Windows:
-
-```powershell
-.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local"
-```
-
-No macOS ou Linux:
+Em um novo terminal, na mesma pasta, execute:
 
 ```bash
-./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
+
+No PowerShell, se o argumento do perfil não for interpretado corretamente, coloque-o entre aspas: `"-Dspring-boot.run.profiles=local"`.
 
 A API ficará disponível em `http://localhost:8080`.
 
@@ -124,7 +133,7 @@ O perfil `local` habilita a documentação interativa:
 - Swagger UI: <http://localhost:8080/swagger-ui/index.html>
 - Especificação OpenAPI: <http://localhost:8080/v3/api-docs>
 
-As rotas da documentação são públicas. As demais rotas exigem um token JWT válido no cabeçalho:
+As rotas da documentação e as consultas públicas de serviços e avaliações não exigem autenticação. As rotas protegidas exigem um token JWT válido no cabeçalho:
 
 ```http
 Authorization: Bearer <token-do-clerk>
@@ -132,36 +141,28 @@ Authorization: Bearer <token-do-clerk>
 
 ### Execução pelo IntelliJ IDEA
 
-Ao abrir o workspace completo no IntelliJ IDEA, use uma das configurações compartilhadas em `.run/`:
+1. Abra a pasta que contém o `pom.xml` como projeto Maven.
+2. Configure o SDK do projeto para o JDK 21 ou superior.
+3. Inicie o PostgreSQL com `docker compose up -d --wait postgres`.
+4. Crie uma configuração Maven com o comando `spring-boot:run` e, em **Run parameters**, informe `-Dspring-boot.run.profiles=local`.
 
-- `Backend`: inicia somente a API com o perfil `local`;
-- `VoluntPlus - Full Stack`: inicia backend e frontend juntos.
-
-Certifique-se de que o JDK do projeto esteja configurado para a versão 21 ou superior e que o PostgreSQL já esteja em execução.
+O diretório de trabalho da configuração deve ser a pasta que contém o `pom.xml` e o arquivo `.env`.
 
 ## Testes e build
 
-Execute os testes automatizados:
-
-No Windows:
-
-```powershell
-.\mvnw.cmd test
-```
-
-No macOS ou Linux:
+Os testes de persistência usam Testcontainers. Por isso, mantenha o Docker Desktop em execução e execute:
 
 ```bash
-./mvnw test
+mvn test
 ```
 
 Gere o pacote da aplicação:
 
 ```bash
-./mvnw clean package
+mvn clean package
 ```
 
-No Windows, substitua `./mvnw` por `.\mvnw.cmd`. O arquivo JAR será criado em `target/`.
+O arquivo JAR será criado em `target/`. Como a fase `package` também executa os testes, ela igualmente precisa de acesso ao Docker.
 
 ## Comandos úteis do banco de dados
 
@@ -195,7 +196,7 @@ src/
 
 ## Observações importantes
 
-- O Hibernate está configurado com `ddl-auto=none`: a aplicação não cria nem altera automaticamente o esquema do banco.
+- O Hibernate está configurado com `ddl-auto=none`; a criação e a evolução do esquema são feitas pelas migrações do Flyway ao iniciar a aplicação.
 - O backend não mantém sessão no servidor; a autenticação é stateless e baseada em JWT.
 - O Swagger fica desabilitado por padrão e é habilitado somente pelo perfil `local`.
 - Se a porta `5432` estiver ocupada, altere `POSTGRES_PORT` e atualize a porta correspondente em `DB_URL`.
@@ -220,3 +221,7 @@ Confirme se:
 ### Erro de CORS
 
 Defina `FRONTEND_URL` com a origem completa do frontend, incluindo protocolo e porta, sem caminhos adicionais. Exemplo: `http://localhost:3000`.
+
+### Docker indisponível nos testes
+
+Se os testes exibirem `Could not find a valid Docker environment`, abra o Docker Desktop, aguarde o mecanismo iniciar e confirme o acesso com `docker info` antes de executar `mvn test` novamente.
