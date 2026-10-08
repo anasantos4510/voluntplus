@@ -11,6 +11,9 @@ import br.com.voluntplus.users.application.port.in.CompleteOrganizationRegistrat
 import br.com.voluntplus.users.application.port.in.CompleteOrganizationRegistrationUseCase.OrganizationRegistrationResult;
 import br.com.voluntplus.users.application.port.in.GetCurrentUserProfileUseCase;
 import br.com.voluntplus.users.application.port.in.GetCurrentUserProfileUseCase.CurrentUserProfileResult;
+import br.com.voluntplus.users.application.port.in.UpdateCurrentUserProfileUseCase;
+import br.com.voluntplus.users.application.port.in.UpdateCurrentUserProfileUseCase.UpdateCurrentUserProfileCommand;
+import br.com.voluntplus.users.application.port.in.UpdateCurrentUserProfileUseCase.UpdateCurrentUserProfileResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -41,16 +44,19 @@ public class UserController {
 	private final CompleteOrganizationRegistrationUseCase completeOrganizationRegistration;
 	private final GetCurrentUserProfileUseCase getCurrentUserProfile;
 	private final ChangeCurrentUserRoleUseCase changeCurrentUserRole;
+	private final UpdateCurrentUserProfileUseCase updateCurrentUserProfile;
 
 	public UserController(
 			CompleteIndividualRegistrationUseCase completeIndividualRegistration,
 			CompleteOrganizationRegistrationUseCase completeOrganizationRegistration,
 			GetCurrentUserProfileUseCase getCurrentUserProfile,
-			ChangeCurrentUserRoleUseCase changeCurrentUserRole) {
+			ChangeCurrentUserRoleUseCase changeCurrentUserRole,
+			UpdateCurrentUserProfileUseCase updateCurrentUserProfile) {
 		this.completeIndividualRegistration = completeIndividualRegistration;
 		this.completeOrganizationRegistration = completeOrganizationRegistration;
 		this.getCurrentUserProfile = getCurrentUserProfile;
 		this.changeCurrentUserRole = changeCurrentUserRole;
+		this.updateCurrentUserProfile = updateCurrentUserProfile;
 	}
 
 	@PostMapping("/individuals")
@@ -138,6 +144,45 @@ public class UserController {
 				result.personType(),
 				result.fullName(),
 				result.organizationName(),
+				result.cnpj(),
+				result.email(),
+				result.birthDate(),
+				result.gender(),
+				result.currentRole());
+
+		return ResponseEntity.ok()
+				.cacheControl(CacheControl.noStore())
+				.body(response);
+	}
+
+	@PatchMapping("/me")
+	@Operation(
+			summary = "Alterar o proprio perfil",
+			security = @SecurityRequirement(name = "bearerAuth"))
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Perfil alterado"),
+			@ApiResponse(responseCode = "400", description = "Dados invalidos",
+					content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+			@ApiResponse(responseCode = "401", description = "Identidade nao autenticada ou incompleta",
+					content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+			@ApiResponse(responseCode = "404", description = "Perfil nao encontrado",
+					content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	})
+	public ResponseEntity<UserProfileResponse> updateCurrentProfile(
+			@Valid @RequestBody UpdateCurrentUserProfileRequest request) {
+		UpdateCurrentUserProfileResult result = updateCurrentUserProfile.update(
+				new UpdateCurrentUserProfileCommand(
+						request.fullName(),
+						request.birthDate(),
+						request.gender(),
+						request.organizationName(),
+						request.cnpj()));
+		UserProfileResponse response = new UserProfileResponse(
+				result.id(),
+				result.personType(),
+				result.fullName(),
+				result.organizationName(),
+				result.cnpj(),
 				result.email(),
 				result.birthDate(),
 				result.gender(),

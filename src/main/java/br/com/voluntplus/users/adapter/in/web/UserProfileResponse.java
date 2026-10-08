@@ -14,6 +14,7 @@ public record UserProfileResponse(
 		PersonType personType,
 		String fullName,
 		String organizationName,
+		String cnpj,
 		String email,
 		LocalDate birthDate,
 		Gender gender,

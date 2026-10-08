@@ -7,7 +7,9 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
@@ -35,6 +37,13 @@ public class JpaUserRepositoryAdapter implements UserRepository {
 	@Override
 	public Optional<User> findById(UUID id) {
 		return repository.findById(id).map(UserPersistenceMapper::toDomain);
+	}
+
+	@Override
+	public List<User> findAllByIds(Set<UUID> ids) {
+		return repository.findAllById(ids).stream()
+				.map(UserPersistenceMapper::toDomain)
+				.toList();
 	}
 
 	@Override

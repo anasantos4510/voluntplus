@@ -31,6 +31,11 @@ public class RequireCurrentUserService implements RequireCurrentUserUseCase {
 		return new CurrentUser(
 				user.getId(),
 				user.getPersonType(),
-				user.getCurrentRole());
+				user.getCurrentRole(),
+				user.getEmail(),
+				user.getFullName(),
+				user.getOrganizationName(),
+				user.getBirthDate(),
+				user.getGender());
 	}
 }

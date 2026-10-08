@@ -33,6 +33,7 @@ public class GetCurrentUserProfileService implements GetCurrentUserProfileUseCas
 				user.getPersonType(),
 				user.getFullName(),
 				user.getOrganizationName(),
+				user.getCnpj(),
 				user.getEmail(),
 				user.getBirthDate(),
 				user.getGender(),

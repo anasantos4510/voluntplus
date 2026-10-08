@@ -4,6 +4,7 @@ import br.com.voluntplus.users.application.exception.AuthenticatedIdentityUnavai
 import br.com.voluntplus.users.application.exception.UserAlreadyRegisteredException;
 import br.com.voluntplus.users.application.exception.UserProfileNotFoundException;
 import br.com.voluntplus.users.domain.exception.InvalidUserRegistrationException;
+import br.com.voluntplus.users.domain.exception.InvalidUserProfileUpdateException;
 import br.com.voluntplus.users.domain.exception.UserRoleAlreadyActiveException;
 import br.com.voluntplus.users.domain.exception.UserRoleChangeNotAllowedException;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,11 @@ public class UserExceptionHandler {
 	@ExceptionHandler(InvalidUserRegistrationException.class)
 	public ResponseEntity<ProblemDetail> handleInvalidRegistration(InvalidUserRegistrationException exception) {
 		return problem(HttpStatus.BAD_REQUEST, "Invalid user registration", exception.getMessage());
+	}
+
+	@ExceptionHandler(InvalidUserProfileUpdateException.class)
+	public ResponseEntity<ProblemDetail> handleInvalidProfileUpdate(InvalidUserProfileUpdateException exception) {
+		return problem(HttpStatus.BAD_REQUEST, "Invalid user profile update", exception.getMessage());
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)

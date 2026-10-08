@@ -1,6 +1,7 @@
 package br.com.voluntplus.users.domain.model;
 
 import br.com.voluntplus.users.domain.exception.InvalidUserRegistrationException;
+import br.com.voluntplus.users.domain.exception.InvalidUserProfileUpdateException;
 import br.com.voluntplus.users.domain.exception.UserRoleAlreadyActiveException;
 import br.com.voluntplus.users.domain.exception.UserRoleChangeNotAllowedException;
 
@@ -14,11 +15,11 @@ public final class User {
 	private final PersonType personType;
 	private UserRole currentRole;
 	private final String email;
-	private final String fullName;
-	private final LocalDate birthDate;
-	private final Gender gender;
-	private final String organizationName;
-	private final String cnpj;
+	private String fullName;
+	private LocalDate birthDate;
+	private Gender gender;
+	private String organizationName;
+	private String cnpj;
 
 	private User(
 			UUID id,
@@ -150,6 +151,50 @@ public final class User {
 		}
 
 		currentRole = requestedRole;
+	}
+
+	public void updateIndividualProfile(
+			String fullName,
+			LocalDate birthDate,
+			Gender gender,
+			LocalDate updateDate) {
+		if (personType != PersonType.INDIVIDUAL) {
+			throw new InvalidUserProfileUpdateException("Only an individual can update individual profile data");
+		}
+		if (fullName == null || fullName.isBlank()) {
+			throw new InvalidUserProfileUpdateException("fullName must not be blank");
+		}
+		if (birthDate == null) {
+			throw new InvalidUserProfileUpdateException("birthDate must not be null");
+		}
+		if (gender == null) {
+			throw new InvalidUserProfileUpdateException("gender must not be null");
+		}
+		if (updateDate == null) {
+			throw new InvalidUserProfileUpdateException("updateDate must not be null");
+		}
+		if (birthDate.plusYears(18).isAfter(updateDate)) {
+			throw new InvalidUserProfileUpdateException("An individual must be at least 18 years old");
+		}
+
+		this.fullName = fullName;
+		this.birthDate = birthDate;
+		this.gender = gender;
+	}
+
+	public void updateOrganizationProfile(String organizationName, String cnpj) {
+		if (personType != PersonType.ORGANIZATION) {
+			throw new InvalidUserProfileUpdateException("Only an organization can update organization profile data");
+		}
+		if (organizationName == null || organizationName.isBlank()) {
+			throw new InvalidUserProfileUpdateException("organizationName must not be blank");
+		}
+		if (cnpj != null && !cnpj.matches("\\d{14}")) {
+			throw new InvalidUserProfileUpdateException("cnpj must contain exactly 14 digits");
+		}
+
+		this.organizationName = organizationName;
+		this.cnpj = cnpj;
 	}
 
 	public String getEmail() {

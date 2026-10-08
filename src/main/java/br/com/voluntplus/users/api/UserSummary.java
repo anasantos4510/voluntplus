@@ -5,5 +5,10 @@ import java.util.UUID;
 public record UserSummary(
 		UUID userId,
 		PersonType personType,
-		CurrentRole currentRole) {
+		CurrentRole currentRole,
+		String email,
+		String fullName,
+		String organizationName,
+		PublicGender gender,
+		Integer age) {
 }
