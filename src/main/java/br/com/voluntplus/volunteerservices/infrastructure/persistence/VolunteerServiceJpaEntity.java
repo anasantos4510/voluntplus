@@ -63,7 +63,7 @@ class VolunteerServiceJpaEntity {
 	private String neighborhood;
 
 	@Column(name = "location_type")
-	private Integer locationType;
+	private Short locationType;
 
 	@Column(name = "whatsapp", length = 11)
 	private String whatsapp;
@@ -142,7 +142,9 @@ class VolunteerServiceJpaEntity {
 		this.state = state;
 		this.city = city;
 		this.neighborhood = neighborhood;
-		this.locationType = locationType;
+		this.locationType = locationType == null
+				? null
+				: locationType.shortValue();
 		this.whatsapp = whatsapp;
 		this.phone = phone;
 		this.instagram = instagram;
@@ -166,7 +168,11 @@ class VolunteerServiceJpaEntity {
 	String getState() { return state; }
 	String getCity() { return city; }
 	String getNeighborhood() { return neighborhood; }
-	Integer getLocationType() { return locationType; }
+	Integer getLocationType() {
+		return locationType == null
+				? null
+				: locationType.intValue();
+	}
 	String getWhatsapp() { return whatsapp; }
 	String getPhone() { return phone; }
 	String getInstagram() { return instagram; }

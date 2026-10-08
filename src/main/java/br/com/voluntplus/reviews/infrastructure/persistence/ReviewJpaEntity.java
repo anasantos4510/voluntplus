@@ -23,7 +23,7 @@ class ReviewJpaEntity {
 	private UUID authorId;
 
 	@Column(name = "rating", nullable = false, updatable = false)
-	private int rating;
+	private short rating;
 
 	@Column(name = "comment", length = 500, updatable = false)
 	private String comment;
@@ -44,7 +44,7 @@ class ReviewJpaEntity {
 		this.id = id;
 		this.serviceId = serviceId;
 		this.authorId = authorId;
-		this.rating = rating;
+		this.rating = (short) rating;
 		this.comment = comment;
 		this.createdAt = createdAt;
 	}

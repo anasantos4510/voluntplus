@@ -49,6 +49,14 @@ Não é necessário instalar o Maven: o projeto inclui o Maven Wrapper.
 
 3. Preencha o `.env`, principalmente `CLERK_ISSUER_URI`, com a URL do emissor JWT da instância do Clerk usada pelo frontend.
 
+   No painel do Clerk, configure também a custom session claim abaixo. O backend usa esses dados autenticados e não aceita o e-mail informado livremente pelo cliente:
+
+   ```json
+   {
+     "primaryEmail": "{{user.primary_email_address}}"
+   }
+   ```
+
    ```dotenv
    POSTGRES_DB=voluntplus
    POSTGRES_USER=voluntplus
@@ -61,6 +69,7 @@ Não é necessário instalar o Maven: o projeto inclui o Maven Wrapper.
 
    FRONTEND_URL=http://localhost:3000
    CLERK_ISSUER_URI=https://seu-dominio.clerk.accounts.dev
+   APP_BUSINESS_ZONE=America/Sao_Paulo
    ```
 
    | Variável | Finalidade |
@@ -72,8 +81,9 @@ Não é necessário instalar o Maven: o projeto inclui o Maven Wrapper.
    | `DB_URL` | URL JDBC utilizada pela aplicação. |
    | `DB_USERNAME` | Usuário utilizado pela aplicação. |
    | `DB_PASSWORD` | Senha utilizada pela aplicação. |
-   | `FRONTEND_URL` | Origem autorizada pelo CORS e usada na validação do claim `azp`. |
-   | `CLERK_ISSUER_URI` | URL do emissor dos tokens JWT fornecida pelo Clerk. |
+| `FRONTEND_URL` | Origem autorizada pelo CORS e usada na validação do claim `azp`. |
+| `CLERK_ISSUER_URI` | URL do emissor dos tokens JWT fornecida pelo Clerk. |
+| `APP_BUSINESS_ZONE` | Fuso usado nas regras de negócio dependentes da data, com padrão `America/Sao_Paulo`. |
 
 > O arquivo `.env` contém credenciais locais e não deve ser versionado. Ele já está incluído no `.gitignore`.
 
