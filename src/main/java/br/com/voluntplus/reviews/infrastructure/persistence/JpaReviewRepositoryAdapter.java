@@ -1,9 +1,12 @@
 package br.com.voluntplus.reviews.infrastructure.persistence;
 
+import br.com.voluntplus.reviews.application.exception.DuplicateReviewException;
 import br.com.voluntplus.reviews.application.port.out.ReviewRepository;
 import br.com.voluntplus.reviews.domain.model.Review;
 import br.com.voluntplus.volunteerservices.api.ServiceReviewStatistics;
 import br.com.voluntplus.volunteerservices.api.ServiceReviewStatisticsProvider;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -23,8 +26,20 @@ public class JpaReviewRepositoryAdapter implements ReviewRepository, ServiceRevi
 
 	@Override
 	public Review save(Review review) {
-		ReviewJpaEntity savedReview = repository.saveAndFlush(ReviewPersistenceMapper.toEntity(review));
-		return ReviewPersistenceMapper.toDomain(savedReview);
+		try {
+			ReviewJpaEntity savedReview = repository.saveAndFlush(ReviewPersistenceMapper.toEntity(review));
+			return ReviewPersistenceMapper.toDomain(savedReview);
+		} catch (DataIntegrityViolationException exception) {
+			if (isServiceAuthorConstraintViolation(exception)) {
+				throw new DuplicateReviewException(exception);
+			}
+			throw exception;
+		}
+	}
+
+	@Override
+	public boolean existsByServiceIdAndAuthorId(UUID serviceId, UUID authorId) {
+		return repository.existsByServiceIdAndAuthorId(serviceId, authorId);
 	}
 
 	@Override
@@ -51,5 +66,22 @@ public class JpaReviewRepositoryAdapter implements ReviewRepository, ServiceRevi
 
 	private double roundToOneDecimal(double value) {
 		return Math.round(value * 10.0) / 10.0;
+	}
+
+	private boolean isServiceAuthorConstraintViolation(Throwable exception) {
+		Throwable current = exception;
+		while (current != null) {
+			if (current instanceof ConstraintViolationException constraintViolation
+					&& "uk_reviews_service_author".equalsIgnoreCase(constraintViolation.getConstraintName())) {
+				return true;
+			}
+
+			String message = current.getMessage();
+			if (message != null && message.contains("uk_reviews_service_author")) {
+				return true;
+			}
+			current = current.getCause();
+		}
+		return false;
 	}
 }

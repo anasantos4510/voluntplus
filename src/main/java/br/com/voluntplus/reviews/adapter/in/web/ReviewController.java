@@ -44,6 +44,7 @@ public class ReviewController {
 		@ApiResponse(responseCode = "401", description = "Identidade ou perfil indisponível"),
 		@ApiResponse(responseCode = "403", description = "Usuário não autorizado a avaliar"),
 		@ApiResponse(responseCode = "404", description = "Serviço não encontrado"),
+		@ApiResponse(responseCode = "409", description = "Beneficiário já avaliou o serviço"),
 		@ApiResponse(responseCode = "422", description = "Regra da avaliação não atendida")
 	})
 	public ResponseEntity<ReviewResponse> register(
