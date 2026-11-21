@@ -1,5 +1,6 @@
 package br.com.voluntplus.reviews.application.service;
 
+import br.com.voluntplus.reviews.application.exception.DuplicateReviewException;
 import br.com.voluntplus.reviews.application.exception.OwnServiceReviewNotAllowedException;
 import br.com.voluntplus.reviews.application.exception.ReviewableServiceNotFoundException;
 import br.com.voluntplus.reviews.application.port.in.RegisterReviewUseCase;
@@ -44,6 +45,9 @@ public class RegisterReviewService implements RegisterReviewUseCase {
 		ServiceReviewContext service = requireReviewableService(command.serviceId());
 		if (service.ownerId().equals(author.userId())) {
 			throw new OwnServiceReviewNotAllowedException();
+		}
+		if (repository.existsByServiceIdAndAuthorId(service.serviceId(), author.userId())) {
+			throw new DuplicateReviewException();
 		}
 
 		Review review = Review.create(

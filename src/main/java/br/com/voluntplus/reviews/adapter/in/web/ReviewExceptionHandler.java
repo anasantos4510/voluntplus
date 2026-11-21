@@ -1,5 +1,6 @@
 package br.com.voluntplus.reviews.adapter.in.web;
 
+import br.com.voluntplus.reviews.application.exception.DuplicateReviewException;
 import br.com.voluntplus.reviews.application.exception.OwnServiceReviewNotAllowedException;
 import br.com.voluntplus.reviews.application.exception.ReviewableServiceNotFoundException;
 import br.com.voluntplus.reviews.domain.exception.InvalidReviewException;
@@ -41,6 +42,11 @@ public class ReviewExceptionHandler {
 	@ExceptionHandler(OwnServiceReviewNotAllowedException.class)
 	public ResponseEntity<ProblemDetail> handleOwnService(OwnServiceReviewNotAllowedException exception) {
 		return problem(HttpStatus.FORBIDDEN, "Review not allowed", exception.getMessage());
+	}
+
+	@ExceptionHandler(DuplicateReviewException.class)
+	public ResponseEntity<ProblemDetail> handleDuplicateReview(DuplicateReviewException exception) {
+		return problem(HttpStatus.CONFLICT, "Review already registered", exception.getMessage());
 	}
 
 	@ExceptionHandler(ReviewableServiceNotFoundException.class)

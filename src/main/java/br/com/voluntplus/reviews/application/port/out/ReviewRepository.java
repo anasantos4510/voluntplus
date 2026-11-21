@@ -9,5 +9,7 @@ public interface ReviewRepository {
 
 	Review save(Review review);
 
+	boolean existsByServiceIdAndAuthorId(UUID serviceId, UUID authorId);
+
 	List<Review> findAllByServiceIdOrderByCreatedAtAscIdAsc(UUID serviceId);
 }

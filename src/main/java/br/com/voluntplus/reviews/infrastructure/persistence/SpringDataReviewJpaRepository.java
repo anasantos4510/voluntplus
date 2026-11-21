@@ -10,6 +10,8 @@ import java.util.UUID;
 
 interface SpringDataReviewJpaRepository extends JpaRepository<ReviewJpaEntity, UUID> {
 
+	boolean existsByServiceIdAndAuthorId(UUID serviceId, UUID authorId);
+
 	List<ReviewJpaEntity> findAllByServiceIdOrderByCreatedAtAscIdAsc(UUID serviceId);
 
 	@Query("""
